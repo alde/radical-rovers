@@ -1,0 +1,21 @@
+[package]
+name = "radical-rovers"
+version = "0.1.0"
+edition = "2024"
+description = "Rover stunt sandbox on the real Moon and Mars, at absurd speed."
+publish = false
+
+[dependencies]
+bevy = { version = "0.20.1", features = ["system_font_discovery"] }
+noise = "0.9"
+
+# Bevy is slow unoptimised; keep our code quick to compile but deps fast.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
