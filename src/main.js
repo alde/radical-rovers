@@ -12,6 +12,9 @@ import { DustTrail } from './dust.js';
 import { Sky } from './sky.js';
 import { Input } from './input.js';
 import { Hud } from './hud.js';
+import { TrickTracker } from './tricks/trick-tracker.js';
+import { TrickFeedback } from './tricks/trick-feedback.js';
+import { sampleFlight } from './tricks/flight-sample.js';
 
 const FIXED_DT = 1 / 300; // physics rate; at 420 m/s that's 1.4 m per step
 const MAX_SUBSTEPS = 15;
@@ -45,6 +48,8 @@ class Game {
     this.dust = new DustTrail(this.scene, planet);
     this.chase = new ChaseCamera(this.camera, this.terrain);
     this.input = new Input();
+    this.tricks = new TrickTracker();
+    this.trickFeedback = new TrickFeedback();
     this.hud = new Hud({ planet, dem, demLabel, onTeleport: (place) => this.teleport(place) });
     Object.assign(this, { gravityIndex: 0, stuckFor: 0, accumulator: 0, last: performance.now() });
     addEventListener('resize', () => this.resize());
@@ -65,6 +70,7 @@ class Game {
   dropAt(x, z) {
     this.body.placeAt(x, this.terrain.heightAt(x, z) + SPAWN_DROP + ROVER_SPEC.restLength, z, this.body.heading);
     this.chase.snap(this.body);
+    this.tricks.reset();
   }
 
   respawnHere() {
@@ -78,6 +84,7 @@ class Game {
     this.recoverIfStuck(dt);
     const gravity = this.planet.gravity * this.gravityScale;
     this.stepPhysics(dt, gravity);
+    this.scoreTricks(dt);
     this.chunks.update(this.body.position.x, this.body.position.z);
     this.model.update(this.body, dt);
     this.dust.emit(this.body, ROVER_SPEC, dt);
@@ -96,6 +103,11 @@ class Game {
       this.body.step(FIXED_DT, controls, this.terrain, gravity);
     }
     this.accumulator = Math.min(this.accumulator, FIXED_DT);
+  }
+
+  scoreTricks(dt) {
+    const event = this.tricks.update(dt, sampleFlight(this.body, this.terrain));
+    this.trickFeedback.handle(event, this.tricks);
   }
 
   handleToggles() {

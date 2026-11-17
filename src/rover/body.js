@@ -8,7 +8,7 @@ const FULL_GRIP_COMPRESSION = 0.005; // metres; grip ramps in over the first few
 const HANDBRAKE_RATE = 4; // 1/s
 const REVERSE_THRESHOLD = 1; // m/s; above this, "back" brakes instead of reversing
 const HULL_FRICTION_RATE = 6; // 1/s cap on how fast hull scraping can stop you
-const _levelAxis = new THREE.Vector3(), _travel = new THREE.Vector3(), _facing = new THREE.Vector3();
+const _levelAxis = new THREE.Vector3(), _groundNormal = new THREE.Vector3(), _travel = new THREE.Vector3(), _facing = new THREE.Vector3();
 const MIN_WEATHERVANE_SPEED_SQ = 25; // (5 m/s)^2
 
 const _mount = new THREE.Vector3(), _down = new THREE.Vector3(), _n = new THREE.Vector3();
@@ -35,12 +35,15 @@ export class RoverBody {
     this.corners = boxCorners(spec.halfExtents);
     this.wheels = spec.wheelMounts.map((mount) => ({ mount, steer: 0, extension: spec.restLength, groundSpeed: 0, grounded: false }));
     this.groundedWheels = 0;
+    this.hullContacts = 0;
     this.updateBasis();
   }
 
   get speed() { return this.velocity.length(); }
   get forwardSpeed() { return this.velocity.dot(this.forward); }
   get heading() { return Math.atan2(-this.forward.x, -this.forward.z); }
+  /** Touching the ground with anything: wheels or hull. */
+  get inContact() { return this.groundedWheels > 0 || this.hullContacts > 0; }
 
   placeAt(x, y, z, heading = this.heading) {
     this.position.set(x, y, z);
@@ -55,9 +58,10 @@ export class RoverBody {
     this.torque.set(0, 0, 0);
     this.airAccel.set(0, 0, 0);
     this.groundedWheels = 0;
+    this.hullContacts = 0;
     this.wheels.forEach((wheel) => this.applyWheel(wheel, input, terrain));
     this.corners.forEach((corner) => this.applyHullContact(corner, terrain));
-    if (this.groundedWheels === 0) this.applyAirControl(input);
+    if (this.groundedWheels === 0) this.applyAirControl(input, terrain);
     if (this.groundedWheels === 0 && input.boost && input.throttle > 0) this.applyRocket();
     this.integrate(dt);
   }
@@ -124,6 +128,7 @@ export class RoverBody {
     const p = _p.copy(corner).applyQuaternion(this.quaternion).add(this.position);
     const ground = terrain.heightAt(p.x, p.z);
     if (p.y >= ground) return;
+    this.hullContacts++;
     const n = terrain.normalAt(p.x, p.z, _n);
     const pv = this.pointVelocity(p, _pv);
     const vn = pv.dot(n);
@@ -140,18 +145,20 @@ export class RoverBody {
     this.force.addScaledVector(this.forward, s.airThrust * s.mass * headroom);
   }
 
-  applyAirControl(input) {
+  applyAirControl(input, terrain) {
     const s = this.spec;
     this.airAccel.set(-input.pitch * s.airPitchAccel, -input.yaw * s.airYawAccel, -input.roll * s.airRollAccel);
     this.airAccel.applyQuaternion(this.quaternion);
-    if (!input.pitch && !input.roll && !input.yaw) this.applyAirAssist();
+    if (!input.pitch && !input.roll && !input.yaw) this.applyAirAssist(terrain);
   }
 
-  // Hands off in the air, a gyro rights the rover and turns its nose into the
-  // direction of travel, so long jumps at boost speed land on the wheels.
-  applyAirAssist() {
+  // Hands off in the air, a gyro lines the rover up with the ground beneath it
+  // and turns its nose into the direction of travel, so long jumps land on the
+  // wheels and match the slope they come down on.
+  applyAirAssist(terrain) {
     const s = this.spec;
-    const tilt = _levelAxis.crossVectors(this.up, UP);
+    const ground = terrain.normalAt(this.position.x, this.position.z, _groundNormal);
+    const tilt = _levelAxis.crossVectors(this.up, ground);
     this.airAccel.addScaledVector(tilt, s.airLevelStiffness).addScaledVector(this.angularVelocity, -s.airLevelDamping);
     const travel = _travel.copy(this.velocity).setY(0);
     if (travel.lengthSq() < MIN_WEATHERVANE_SPEED_SQ) return;
