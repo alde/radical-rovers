@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Planet Rover Madness</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.3/+esm"
+      }
+    }
+  </script>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #000; font: 13px/1.4 ui-monospace, Menlo, monospace; color: #f2efe8; }
+    canvas { display: block; }
+    .panel { position: fixed; background: rgba(10, 10, 14, 0.55); padding: 10px 14px; border-radius: 8px; backdrop-filter: blur(4px); }
+    #stats { top: 12px; left: 12px; min-width: 260px; }
+    #stats .big { font-size: 34px; font-weight: 700; }
+    #stats .dim { opacity: 0.65; font-size: 11px; }
+    #planets a { color: #f2efe8; margin-right: 10px; opacity: 0.5; text-decoration: none; }
+    #planets a.active { opacity: 1; text-decoration: underline; }
+    #map { right: 12px; bottom: 12px; }
+    #map .stack { position: relative; width: 360px; height: 180px; }
+    #map canvas { position: absolute; inset: 0; image-rendering: pixelated; }
+    #minimap-overlay { cursor: crosshair; }
+    #map select { width: 100%; margin-top: 6px; background: #222; color: #eee; border: 1px solid #444; padding: 3px; }
+    #help { left: 12px; bottom: 12px; }
+    #help.hidden { display: none; }
+    #help kbd { background: #333; border-radius: 3px; padding: 0 4px; }
+    #streaming { position: fixed; top: 12px; right: 12px; transition: opacity 0.4s; opacity: 0; }
+    #fatal { position: fixed; inset: 40% 0 auto; text-align: center; color: #f66; }
+  </style>
+</head>
+<body>
+  <div id="stats" class="panel">
+    <div id="planets"><a href="?planet=moon" data-planet="moon">Moon</a><a href="?planet=mars" data-planet="mars">Mars</a></div>
+    <div><span id="planet-name"></span></div>
+    <div><span id="speed" class="big">0</span> km/h</div>
+    <div id="true-speed" class="dim"></div>
+    <div>elev <span id="elevation"></span></div>
+    <div id="position"></div>
+    <div>g <span id="gravity"></span></div>
+    <div id="dem-label" class="dim"></div>
+  </div>
+  <div id="map" class="panel">
+    <div class="stack"><canvas id="minimap" width="360" height="180"></canvas><canvas id="minimap-overlay" width="360" height="180"></canvas></div>
+    <select id="landmarks"><option disabled selected>Teleport to…</option></select>
+  </div>
+  <div id="help" class="panel">
+    <kbd>W</kbd><kbd>S</kbd> drive / brake · <kbd>A</kbd><kbd>D</kbd> steer · <kbd>Shift</kbd> boost · <kbd>Space</kbd> handbrake<br>
+    in the air: <kbd>↑</kbd><kbd>↓</kbd> pitch · <kbd>←</kbd><kbd>→</kbd> roll · <kbd>Q</kbd><kbd>E</kbd> yaw (hands off = auto-level)<br>
+    <kbd>R</kbd> reset · <kbd>G</kbd> gravity ×1/×2/×4 · <kbd>H</kbd> hide help · click map to teleport
+  </div>
+  <div id="streaming" class="panel">streaming terrain…</div>
+  <div id="fatal"></div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
