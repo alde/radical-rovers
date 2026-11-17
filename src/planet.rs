@@ -23,6 +23,7 @@ pub struct DetailParams {
     pub seed: u32,
 }
 
+#[derive(Clone, Copy)]
 pub struct ProceduralParams {
     pub amp: f64,
     pub frequency: f64,
@@ -35,7 +36,7 @@ pub struct Landmark {
     pub lon: f64,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct Planet {
     pub id: &'static str,
     pub name: &'static str,
@@ -52,16 +53,6 @@ pub struct Planet {
     pub detail: DetailParams,
     pub procedural: ProceduralParams,
     pub landmarks: &'static [Landmark],
-}
-
-impl Planet {
-    pub fn by_id(id: &str) -> Option<Planet> {
-        match id {
-            "mars" => Some(mars()),
-            "moon" => Some(moon()),
-            _ => None,
-        }
-    }
 }
 
 pub fn mars() -> Planet {

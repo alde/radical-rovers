@@ -27,7 +27,7 @@ pub struct TrickSystems;
 
 impl Plugin for TricksPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Tricks>().add_message::<TrickMessage>().add_systems(Update, (reset_on_respawn, track).chain().in_set(TrickSystems).after(RoverSystems));
+        app.init_resource::<Tricks>().add_message::<TrickMessage>().add_systems(Update, (reset_on_respawn, track.run_if(in_state(crate::screen::Screen::Playing))).chain().in_set(TrickSystems).after(RoverSystems));
     }
 }
 

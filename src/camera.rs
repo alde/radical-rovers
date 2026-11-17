@@ -4,7 +4,6 @@
 use bevy::math::DVec3;
 use bevy::prelude::*;
 
-use crate::planet::Planet;
 use crate::rover::{Respawned, Rover, RoverSystems};
 use crate::terrain::Terrain;
 use crate::world::WorldPosition;
@@ -24,6 +23,10 @@ const LOOK_AHEAD: f64 = 4.0;
 const LOOK_HEIGHT: f64 = 1.2;
 const FAR_PLANE: f32 = 150_000.0;
 
+/// The in-game camera (as opposed to the menu backdrop's).
+#[derive(Component)]
+pub struct GameCamera;
+
 #[derive(Component)]
 pub struct ChaseCamera {
     offset: DVec3,
@@ -38,12 +41,15 @@ impl Plugin for CameraPlugin {
     }
 }
 
-fn spawn_camera(mut commands: Commands, planet: Res<Planet>) {
-    let (fog_color, fog_start, fog_end) = planet.fog;
+fn spawn_camera(mut commands: Commands) {
     commands.spawn((
+        GameCamera,
         Camera3d::default(),
+        // Must match the menu camera: cameras sharing a window have to agree
+        // on HDR, or the window renders nothing.
+        bevy::camera::Hdr,
         Projection::Perspective(PerspectiveProjection { fov: BASE_FOV_DEG.to_radians(), far: FAR_PLANE, near: 0.3, ..default() }),
-        DistanceFog { color: fog_color, falloff: FogFalloff::Linear { start: fog_start, end: fog_end }, ..default() },
+        DistanceFog::default(),
         ChaseCamera { offset: DVec3::new(0.0, BASE_HEIGHT, BASE_DISTANCE), heading: DVec3::NEG_Z },
         WorldPosition::default(),
         Transform::default(),

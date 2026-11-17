@@ -7,6 +7,7 @@ use bevy::prelude::*;
 
 use crate::LaunchOptions;
 use crate::planet::Planet;
+use crate::screen::Screen;
 use crate::terrain::Terrain;
 use crate::terrain::chunks::TerrainFocus;
 use crate::world::{OriginFocus, WorldPosition};
@@ -60,7 +61,10 @@ impl Plugin for RoverPlugin {
             .add_message::<TeleportTo>()
             .insert_resource(Rover { body: RoverBody::new(&ROVER), controls: Controls::default(), gravity_index: 0, accumulator: 0.0, stuck_for: 0.0 })
             .add_systems(Startup, spawn_rover)
-            .add_systems(Update, (read_controls, handle_teleports, handle_toggles, step_physics, recover_if_stuck, sync_model).chain().in_set(RoverSystems));
+            .add_systems(
+                Update,
+                (handle_teleports, (read_controls, handle_toggles, step_physics, recover_if_stuck).run_if(in_state(Screen::Playing)), sync_model).chain().in_set(RoverSystems),
+            );
     }
 }
 

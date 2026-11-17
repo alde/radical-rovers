@@ -14,7 +14,7 @@ use chunks::{ChunkCache, stream_chunks};
 use dem::{Dem, GridDem, ProceduralDem};
 use heightfield::Heightfield;
 
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct Terrain {
     pub heightfield: Arc<Heightfield>,
     pub palette: Palette,

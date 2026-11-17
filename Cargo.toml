@@ -6,7 +6,7 @@ description = "Rover stunt sandbox on the real Moon and Mars, at absurd speed."
 publish = false
 
 [dependencies]
-bevy = { version = "0.20.1", features = ["system_font_discovery"] }
+bevy = { version = "0.20.1", features = ["system_font_discovery", "wav"] }
 noise = "0.9"
 
 # Bevy is slow unoptimised; keep our code quick to compile but deps fast.

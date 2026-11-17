@@ -18,6 +18,10 @@ const GREEN: Color = Color::srgb(0.49, 0.88, 0.49);
 const TAN: Color = Color::srgb(0.91, 0.77, 0.6);
 const RED: Color = Color::srgb(1.0, 0.35, 0.29);
 
+/// Parent of the whole HUD; hidden on the title screen.
+#[derive(Component)]
+pub struct HudRoot;
+
 #[derive(Component)]
 struct StatsText;
 #[derive(Component)]
@@ -54,29 +58,27 @@ impl Plugin for HudPlugin {
     }
 }
 
-/// System monospace: Bevy's built-in font lacks glyphs like ≈ ° ² ·.
-const FONT_FAMILIES: &str = "Menlo, SF Mono, DejaVu Sans Mono, Consolas, monospace";
-
 fn text(value: &str, size: f32, color: Color) -> (Text, TextFont, TextColor) {
-    let font = TextFont { font: FontSource::Families(FONT_FAMILIES.into()), font_size: FontSize::Px(size), ..default() };
-    (Text::new(value), font, TextColor(color))
+    crate::style::mono_text(value, size, color)
 }
 
 fn spawn_hud(mut commands: Commands) {
+    let full_screen = Node { position_type: PositionType::Absolute, width: Val::Percent(100.0), height: Val::Percent(100.0), ..default() };
+    let root = commands.spawn((HudRoot, full_screen, Visibility::Hidden)).id();
     let panel = |left: Val, top: Val| Node { position_type: PositionType::Absolute, left, top, padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)), flex_direction: FlexDirection::Column, ..default() };
-    commands.spawn((panel(Val::Px(12.0), Val::Px(12.0)), BackgroundColor(PANEL))).with_child((StatsText, text("", 14.0, Color::WHITE)));
-    spawn_score_panel(&mut commands);
+    commands.spawn((panel(Val::Px(12.0), Val::Px(12.0)), BackgroundColor(PANEL), ChildOf(root))).with_child((StatsText, text("", 14.0, Color::WHITE)));
+    spawn_score_panel(&mut commands, root);
     let centred = |top: f32| Node { position_type: PositionType::Absolute, width: Val::Percent(100.0), top: Val::Percent(top), justify_content: JustifyContent::Center, ..default() };
-    commands.spawn(centred(22.0)).with_child((LiveTrickText, text("", 24.0, Color::WHITE)));
-    commands.spawn(Node { flex_direction: FlexDirection::Column, align_items: AlignItems::Center, ..centred(30.0) }).with_children(|popup| {
+    commands.spawn((centred(22.0), ChildOf(root))).with_child((LiveTrickText, text("", 24.0, Color::WHITE)));
+    commands.spawn((Node { flex_direction: FlexDirection::Column, align_items: AlignItems::Center, ..centred(30.0) }, ChildOf(root))).with_children(|popup| {
         popup.spawn((PopupLine::Grade, Flash::default(), text("", 42.0, GOLD)));
         popup.spawn((PopupLine::Tricks, Flash::default(), text("", 19.0, Color::WHITE)));
         popup.spawn((PopupLine::Points, Flash::default(), text("", 32.0, GOLD)));
     });
-    commands.spawn(centred(13.0)).with_child((PopupLine::Bank, Flash::default(), text("", 24.0, GOLD)));
+    commands.spawn((centred(13.0), ChildOf(root))).with_child((PopupLine::Bank, Flash::default(), text("", 24.0, GOLD)));
 }
 
-fn spawn_score_panel(commands: &mut Commands) {
+fn spawn_score_panel(commands: &mut Commands, root: Entity) {
     let node = Node {
         position_type: PositionType::Absolute,
         top: Val::Px(12.0),
@@ -88,7 +90,7 @@ fn spawn_score_panel(commands: &mut Commands) {
         align_items: AlignItems::Center,
         ..default()
     };
-    commands.spawn((node, BackgroundColor(PANEL))).with_children(|panel| {
+    commands.spawn((node, BackgroundColor(PANEL), ChildOf(root))).with_children(|panel| {
         panel.spawn(text("SCORE", 11.0, Color::srgba(1.0, 1.0, 1.0, 0.65)));
         panel.spawn((ScoreText, text("0", 28.0, Color::WHITE)));
         panel.spawn((ComboRow, Node { flex_direction: FlexDirection::Column, align_items: AlignItems::Center, width: Val::Percent(100.0), display: Display::None, ..default() })).with_children(|row| {

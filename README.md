@@ -12,13 +12,20 @@ detail.
 
     tools/fetch-dem.sh 4         # once: NASA elevation data, ~2 MB per planet
     cargo run --release
-    cargo run --release -- --planet moon --site 3
 
-`--site` picks a landmark (0-based, see `src/planet.rs`). Without the
+The title screen picks the world (← →) and landing site (↑ ↓). Without the
 elevation data the planets are procedural stand-ins.
 
-`--screenshot out.png` saves a frame once the terrain has streamed in, then
-quits.
+Launch options:
+
+- `--planet moon --site 3` skips the title and drops you there (sites are
+  0-based, see `src/planet.rs`)
+- `--screen title|howto|pause|playing` opens a given screen
+- `--screenshot out.png` saves a frame once the terrain has streamed in,
+  then quits
+
+Music and sound effects are synthesised at startup; there are no audio
+assets. Sound can be switched off from the pause menu.
 
 ## Controls
 
@@ -32,6 +39,7 @@ quits.
 | R | reset upright |
 | G | gravity ×1 / ×2 / ×4 |
 | 1-9 | teleport to a landmark |
+| Esc | pause menu |
 
 ## Tricks
 
@@ -69,4 +77,6 @@ Geosciences Node, converted to `data/<planet>.bin` + `.json`.
 - `src/tricks/` – trick detection, scoring, combo chains
 - `src/world.rs` – floating origin: gameplay in f64, rendering re-centred
   near the rover so f32 stays precise ~200 km out
+- `src/menu/` – synthwave title (3D backdrop with bloom), how-to, pause
+- `src/audio/` – offline synth: menu loop and trick chimes rendered to WAV
 - `src/planet.rs` – gravity, scale, palette, landmarks per planet

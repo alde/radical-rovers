@@ -117,6 +117,9 @@ pub fn stream_chunks(
     focus: Query<&WorldPosition, With<TerrainFocus>>,
     mut visibility: Query<&mut Visibility, With<TerrainChunk>>,
 ) {
+    if terrain.is_changed() {
+        clear(&mut commands, &mut cache);
+    }
     let Ok(focus) = focus.single() else { return };
     let (px, pz) = (focus.0.x, focus.0.z);
     cache.frame += 1;
@@ -200,6 +203,16 @@ fn displayed_tiles(cache: &mut ChunkCache, roots: &[Node]) -> std::collections::
         }
     }
     shown
+}
+
+/// Drop every tile: the active world changed. In-flight builds are dropped
+/// with their tasks, which cancels them.
+fn clear(commands: &mut Commands, cache: &mut ChunkCache) {
+    for (_, state) in cache.chunks.drain() {
+        if let ChunkState::Ready { entity, .. } = state {
+            commands.entity(entity).despawn();
+        }
+    }
 }
 
 fn evict(commands: &mut Commands, cache: &mut ChunkCache) {
